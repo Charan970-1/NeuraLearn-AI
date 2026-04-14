@@ -128,7 +128,7 @@ const StudyCurriculum = () => {
         if (resp.data.success) {
           val = resp.data.answer;
         }else{
-          toast.error("Bard Issue,Please try again after some time!");
+          toast.error("AI Issue, Please try again after some time!");
         }
       } catch (e) {
         console.log(e);

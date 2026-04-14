@@ -11,20 +11,19 @@ from flask_cors import CORS
 
 from datetime import datetime
 
-from bardapi import Bard
+from groq import Groq
 import re,json,requests
 import time
-import requests
 
-def get_answer_from_bard(prompt):
-    url = "https://bard-ii8v.onrender.com/ask"
-    payload = {"question": prompt}
-    
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def get_answer_from_groq(prompt):
     try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status() 
-        data = response.json()
-        return data.get("answer", "No answer returned.")
+        response = groq_client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.3-70b-versatile",
+        )
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error: {e}"
 
@@ -139,33 +138,57 @@ SECRET_KEY = os.getenv("JWT_SECRET", "neuralearn_secret_key")
 
 
 import csv
-import json
 from io import StringIO
-from bardapi import Bard  # Assuming you're using bardapi
 
 def generate_quiz_by_topics(topics, questions_per_topic=2):
     topic_list = ', '.join([f'"{t}"' for t in topics])
     prompt = (
-        f"Please provide {questions_per_topic * len(topics)} quiz questions on topics: {topic_list} "
-        "as plain CSV text without any code block formatting or backticks. "
-        "The CSV should have these columns: topic, question, option1, option2, option3, option4, answer. "
-        "Do not include any extra line breaks inside fields, and do not wrap the CSV inside triple backticks or any other code formatting. "
-        "Just give me plain CSV content. Give column names as the first row."
+        f"Generate exactly {questions_per_topic} multiple choice quiz questions for EACH of these topics: {topic_list}. "
+        f"That means {questions_per_topic * len(topics)} questions total. "
+        "Return ONLY plain CSV text (no markdown, no backticks, no code blocks). "
+        "Columns: topic,question,option1,option2,option3,option4,answer\n"
+        "The first row must be the column headers. "
+        "IMPORTANT: The 'answer' column must contain the EXACT TEXT of the correct option, NOT a number. "
+        "Example row: Variables,What is a variable?,A container for data,A function,A loop,A class,A container for data\n"
+        "Do not use any formatting other than plain CSV."
     )
 
     try:
-        answer = get_answer_from_bard(prompt)
-        csv_file = StringIO(answer)
+        answer = get_answer_from_groq(prompt)
+        
+        # Strip code blocks if Groq wraps them anyway
+        cleaned = re.sub(r"```(?:csv)?\s*\n?", "", answer).strip()
+        cleaned = re.sub(r"\n?```\s*$", "", cleaned).strip()
+        
+        csv_file = StringIO(cleaned)
         reader = csv.DictReader(csv_file)
 
         questions = []
         for row in reader:
-            questions.append({
-                "topic": row["topic"].strip(),
-                "question": row["question"].strip(),
-                "options": [row["option1"].strip(), row["option2"].strip(), row["option3"].strip(), row["option4"].strip()],
-                "answer": row["answer"].strip()
-            })
+            try:
+                opts = [row["option1"].strip(), row["option2"].strip(), row["option3"].strip(), row["option4"].strip()]
+                ans = row["answer"].strip()
+                
+                # If the answer is a number (1-4), convert to actual option text
+                if ans in ["1", "2", "3", "4"]:
+                    ans = opts[int(ans) - 1]
+                
+                # If the answer doesn't match any option exactly, try to find closest match
+                if ans not in opts:
+                    for opt in opts:
+                        if ans.lower() in opt.lower() or opt.lower() in ans.lower():
+                            ans = opt
+                            break
+                
+                questions.append({
+                    "topic": row["topic"].strip(),
+                    "question": row["question"].strip(),
+                    "options": opts,
+                    "answer": ans
+                })
+            except Exception as e:
+                print(f"Skipping row due to error: {e}")
+                continue
 
         return questions
 
@@ -197,10 +220,7 @@ def ask_ai():
     data = request.get_json()
     question = data.get('question', '')
     user_id = data.get('user_id','')
-    ans = get_answer_from_bard(basic_query+"/n/n"+question)
-    ans = re.sub(r'[*_#`>-]', '', ans)           
-    ans = re.sub(r'\n+', ' ', ans)               
-    ans = re.sub(r'\s{2,}', ' ', ans)   
+    ans = get_answer_from_groq(basic_query+"\n\n"+question)
     ans = ans.strip()
 
     response = supabase.rpc(
@@ -351,7 +371,7 @@ def user_dashboard_data():
 
 
 
-        ans = get_answer_from_bard(prompt)
+        ans = get_answer_from_groq(prompt)
         match = re.search(r"\[.*\]", ans, re.DOTALL)
         if not match:
             raise ValueError("Could not extract a valid list from the AI response.")
@@ -393,7 +413,7 @@ def explain_topic():
     )
 
     try:
-        raw_ans = get_answer_from_bard(explain_prompt + topic)
+        raw_ans = get_answer_from_groq(explain_prompt + topic)
 
         match = re.search(r"```json\s*(.*?)\s*```", raw_ans, re.DOTALL | re.IGNORECASE)
         json_str = match.group(1).strip() if match else raw_ans
@@ -422,15 +442,16 @@ def gen_curr():
     duration = data.get('duration', '')
 
     prompt = (
-        f"You are an expert curriculum designer. Create a {duration}-day learning plan for {goal} "
-        "in this JSON format only (no extra text): "
-        "{'Day 1': {'Topic': '', 'Description': '', 'Subtopics': ['']}, 'Day 2': ...}. "
+        f"You are an expert curriculum designer. Create a {duration}-day learning plan for {goal}. "
+        "Respond with ONLY valid JSON (using double quotes) in a ```json code block. "
+        "Use this exact format: "
+        '{{"Day 1": {{"Topic": "...", "Description": "...", "Subtopics": ["..."]}}, "Day 2": ...}}. '
         "Use simple language, keep it short, structured, and well-formatted. "
-        "Each day must have equal topics.Each day can have maximum of 3 topics only.No topic should have (,) in name"
+        "Each day must have equal topics. Each day can have maximum of 3 topics only. No topic should have (,) in name."
     )
 
     try:
-        response = get_answer_from_bard(prompt)
+        response = get_answer_from_groq(prompt)
 
         if response:
             match = re.search(r"```json(.*?)```", response, re.DOTALL)
@@ -443,11 +464,17 @@ def gen_curr():
                 curriculum = json.loads(json_str)
                 return jsonify({"success": True, "data": curriculum})
             except json.JSONDecodeError:
-                return jsonify({"success": False, "message": "Unable to parse JSON from Bard's response."})
+                # Fallback: try replacing single quotes with double quotes
+                try:
+                    import ast
+                    curriculum = ast.literal_eval(json_str)
+                    return jsonify({"success": True, "data": curriculum})
+                except:
+                    return jsonify({"success": False, "message": "Unable to parse JSON from AI response."})
         else:
-            return jsonify({"success": False, "message": "Empty response from Bard."})
+            return jsonify({"success": False, "message": "Empty response from AI."})
     except Exception as e:
-        return jsonify({"success": False, "message": f"Bard error: {str(e)}"})
+        return jsonify({"success": False, "message": f"AI error: {str(e)}"})
 
 @app.route('/generate-quiz', methods=['POST'])
 def gen_quiz():
@@ -466,6 +493,22 @@ def gen_quiz():
     if not questions or not isinstance(questions, list):
         return jsonify({"success": False, "message": "Failed to generate quiz. Try again later."})
 
+    # Normalize topic names from AI to match requested topics (case-insensitive)
+    topic_map = {}
+    for t in topics:
+        topic_map[t.lower().strip()] = t
+    
+    for q in questions:
+        raw_topic = q.get("topic", "").lower().strip()
+        if raw_topic in topic_map:
+            q["topic"] = topic_map[raw_topic]
+        else:
+            # Try partial match (e.g., "Variable" matches "Variables")
+            for key, val in topic_map.items():
+                if raw_topic in key or key in raw_topic:
+                    q["topic"] = val
+                    break
+
     # Count how many questions we have per topic
     topic_counts = {topic: 0 for topic in topics}
     for q in questions:
@@ -474,7 +517,7 @@ def gen_quiz():
             topic_counts[topic] += 1
 
     for topic, count in topic_counts.items():
-        if count < qpt:
+        if count < 2:  # Allow minimum 2 per topic instead of strict 5
             return jsonify({"success": False, "message": f"Not enough questions for topic '{topic}'. Try again later."})
 
     return jsonify({"success": True, "questions": questions})

@@ -40,8 +40,9 @@
   background: #fff;
   border-radius: 1.2rem 1.2rem 0 0;
   box-shadow: 0 4px 32px 0 rgba(63,142,252,0.18);
-  width: 340px;
+  width: 440px;
   max-width: 95vw;
+  max-height: 80vh;
   margin: 0 2.5rem 2.5rem 0;
   padding: 0;
   display: flex;
@@ -58,4 +59,213 @@
   justify-content: space-between;
   align-items: center;
   font-size: 1.1rem;
+}
+
+.askai-chatbox-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0 0.3rem;
+}
+
+/* Messages Area */
+.askai-chatbox-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.askai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  max-height: 55vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.askai-message {
+  max-width: 90%;
+  padding: 0.7rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.askai-message.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #3F8EFC, #6366f1);
+  color: #fff;
+  border-bottom-right-radius: 0.3rem;
+}
+
+.askai-message.ai {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: #1a1a2e;
+  border-bottom-left-radius: 0.3rem;
+}
+
+/* ============= Markdown Styling inside AI Messages ============= */
+
+.askai-message.ai h1,
+.askai-message.ai h2,
+.askai-message.ai h3,
+.askai-message.ai h4 {
+  margin: 0.5rem 0 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.askai-message.ai p {
+  margin: 0.3rem 0;
+}
+
+.askai-message.ai ul,
+.askai-message.ai ol {
+  margin: 0.3rem 0;
+  padding-left: 1.3rem;
+}
+
+.askai-message.ai li {
+  margin: 0.15rem 0;
+}
+
+.askai-message.ai strong {
+  font-weight: 700;
+  color: #334155;
+}
+
+/* Inline code */
+.inline-code {
+  background: #e2e8f0;
+  color: #c026d3;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+/* ============= Code Block ============= */
+
+.code-block-wrapper {
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+  border: 1px solid #334155;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1e293b;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.75rem;
+}
+
+.code-lang {
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.code-copy-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #cbd5e1;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.code-copy-btn:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+/* ============= Typing Indicator ============= */
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 0.3rem 0;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  background: #94a3b8;
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+
+/* Input Row */
+.askai-chatbox-input-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.askai-chatbox-input {
+  flex: 1;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.askai-chatbox-input:focus {
+  border-color: #3F8EFC;
+}
+
+.askai-chatbox-send {
+  background: linear-gradient(90deg, #3F8EFC, #6366f1);
+  color: #fff;
+  border: none;
+  border-radius: 0.8rem;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.askai-chatbox-send:hover {
+  opacity: 0.9;
+}
+
+.askai-chatbox-send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }

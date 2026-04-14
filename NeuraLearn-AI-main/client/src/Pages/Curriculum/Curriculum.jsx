@@ -162,7 +162,7 @@ const Curriculum = () => {
         setCurriculum(resp.data.data);
       } else {
         console.log(resp.data.message);
-        toast.error("Bard Issue,Please try again after some time!");
+        toast.error("AI Issue, Please try again after some time!");
       }
     } catch (err) {
       console.log(err)

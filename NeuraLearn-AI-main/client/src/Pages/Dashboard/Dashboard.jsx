@@ -185,7 +185,7 @@ const Dashboard = () => {
                 <tr key={index}>
                   <td>{index + 1}</td>
                   <td>{user.name}</td>
-                  <td>{user.xp}</td>
+                  <td>{user.XP}</td>
                 </tr>
               ))}
             </tbody>
