@@ -156,8 +156,7 @@ function Login() {
 
         {/* Footer outside the login-card container */}
         <div className="contact-footer">
-          <p>Email: <a href="mailto:santhoshbeeram19@gmail.com">santhoshbeeram19@gmail.com</a></p>
-          <p>Instagram: <a href="https://www.instagram.com/santhosh_reddy_19_?igsh=YXlxZGpvNmo4MGU=" target="_blank" rel="noopener noreferrer">@santhosh_reddy_19_</a></p>
+          <p>Email: <a href="mailto:charanbandi18@gmail.com">charanbandi18@gmail.com</a></p>
           <p>Contact for bug reporting</p>
         </div>
       </div>
