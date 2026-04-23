@@ -85,4 +85,37 @@ router.post('/getXP', async (req, res) => {
      }
 })
 
+router.post('/update-password', async (req, res) => {
+     const { id, currentPassword, newPassword } = req.body;
+     try {
+          if (!id || !currentPassword || !newPassword) {
+               return res.json({ success: false, message: "All fields are required" });
+          }
+          if (newPassword.length < 6) {
+               return res.json({ success: false, message: "Password must be at least 6 characters" });
+          }
+
+          const userData = await supabase.from('Users').select('*').eq('id', id).single();
+          if (!userData.data) {
+               return res.json({ success: false, message: "User not found" });
+          }
+
+          const validPassword = await bcrypt.compare(currentPassword, userData.data.password);
+          if (!validPassword) {
+               return res.json({ success: false, message: "Current password is incorrect" });
+          }
+
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+          const { error } = await supabase.from('Users').update({ password: hashedPassword }).eq('id', id);
+          if (error) throw new Error("Error updating password");
+
+          res.json({ success: true, message: "Password updated successfully" });
+     } catch (e) {
+          console.log(e);
+          res.status(500).json({ success: false, message: "Server error" });
+     }
+})
+
 export default router;

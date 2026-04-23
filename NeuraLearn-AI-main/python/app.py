@@ -442,12 +442,16 @@ def gen_curr():
     duration = data.get('duration', '')
 
     prompt = (
-        f"You are an expert curriculum designer. Create a {duration}-day learning plan for {goal}. "
-        "Respond with ONLY valid JSON (using double quotes) in a ```json code block. "
-        "Use this exact format: "
-        '{{"Day 1": {{"Topic": "...", "Description": "...", "Subtopics": ["..."]}}, "Day 2": ...}}. '
-        "Use simple language, keep it short, structured, and well-formatted. "
-        "Each day must have equal topics. Each day can have maximum of 3 topics only. No topic should have (,) in name."
+        f"You are an expert curriculum designer. Create a {duration}-day learning plan for the topic: {goal}. "
+        "Respond with ONLY valid JSON (using double quotes) inside a ```json code block. "
+        "The JSON must be an object where each key is \"Day 1\", \"Day 2\", etc. "
+        "Each day's value must be an object with exactly three keys: "
+        "\"Topic\" (a string — the main topic name for that day), "
+        "\"Description\" (a string — a brief 1-2 sentence description), "
+        "\"Subtopics\" (an array of strings — 2-3 subtopic names, no commas in subtopic names). "
+        "Example: {\"Day 1\": {\"Topic\": \"Introduction to Python\", \"Description\": \"Learn Python basics and setup.\", \"Subtopics\": [\"Installing Python\", \"Variables and Data Types\", \"Basic Input Output\"]}}. "
+        "Do NOT nest multiple topics inside a day. Each day must have exactly ONE Topic, ONE Description, and ONE Subtopics array. "
+        f"Generate exactly {duration} days."
     )
 
     try:
@@ -462,15 +466,43 @@ def gen_curr():
 
             try:
                 curriculum = json.loads(json_str)
-                return jsonify({"success": True, "data": curriculum})
             except json.JSONDecodeError:
-                # Fallback: try replacing single quotes with double quotes
                 try:
                     import ast
                     curriculum = ast.literal_eval(json_str)
-                    return jsonify({"success": True, "data": curriculum})
                 except:
                     return jsonify({"success": False, "message": "Unable to parse JSON from AI response."})
+
+            # Normalize: if the AI returned nested Topic1/Topic2/Topic3 objects,
+            # flatten them into the expected {Topic, Description, Subtopics} format
+            normalized = {}
+            for day_key, day_val in curriculum.items():
+                if isinstance(day_val, dict):
+                    # Check if this day already has the correct flat format
+                    if "Topic" in day_val and "Subtopics" in day_val:
+                        normalized[day_key] = day_val
+                    else:
+                        # Nested format: merge all sub-topic objects into one flat entry
+                        all_subtopics = []
+                        descriptions = []
+                        topic_names = []
+                        for sub_key, sub_val in day_val.items():
+                            if isinstance(sub_val, dict):
+                                desc = sub_val.get("Description", sub_val.get("Topic", sub_key))
+                                topic_names.append(desc)
+                                if "Subtopics" in sub_val:
+                                    all_subtopics.extend(sub_val["Subtopics"])
+                                if "Description" in sub_val:
+                                    descriptions.append(sub_val["Description"])
+                        normalized[day_key] = {
+                            "Topic": ", ".join(topic_names) if topic_names else day_key,
+                            "Description": "; ".join(descriptions) if descriptions else "",
+                            "Subtopics": all_subtopics if all_subtopics else []
+                        }
+                else:
+                    normalized[day_key] = day_val
+
+            return jsonify({"success": True, "data": normalized})
         else:
             return jsonify({"success": False, "message": "Empty response from AI."})
     except Exception as e:

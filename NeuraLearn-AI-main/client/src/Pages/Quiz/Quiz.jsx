@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../../Components/Navbar/Navbar";
+import Sidebar from "../../Components/Sidebar/Sidebar";
 import axios from "axios";
 import DonutChart from "../../Components/Charts/DonutChart";
 import BarChartComponent from "../../Components/Charts/BarChartComponent";
@@ -52,8 +53,11 @@ const Quiz = () => {
     return (
       <div>
         <Navbar />
-        <div className="quiz-container">
-          <Loading />
+        <div className="quiz-layout">
+          <Sidebar />
+          <div className="quiz-container">
+            <Loading />
+          </div>
         </div>
       </div>
     );
@@ -62,7 +66,9 @@ const Quiz = () => {
   return (
     <div>
       <Navbar />
-      <div className="quiz-container">
+      <div className="quiz-layout">
+        <Sidebar />
+        <div className="quiz-container">
         <h2>All Quizzes Taken</h2>
         {quizzes.length === 0 ? (
           <p>No quizzes taken yet.</p>
@@ -208,6 +214,7 @@ const Quiz = () => {
             </tbody>
           </table>
         )}
+      </div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import "./Curriculum.css";
 import { toast } from "react-toastify";
 import Loading from "../../Components/Loading/Loading";
 import Navbar from "../../Components/Navbar/Navbar";
+import Sidebar from "../../Components/Sidebar/Sidebar";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import progress from "../../assets/progress.png"
@@ -206,7 +207,9 @@ const Curriculum = () => {
   return (
     <div>
       <Navbar />
-      <div className="curriculum-main">
+      <div className="curriculum-layout">
+        <Sidebar />
+        <div className="curriculum-main">
         <div className="curriculum-section">
           <form className="curriculum-form" onSubmit={handleCurriculum}>
             <input
@@ -384,6 +387,7 @@ const Curriculum = () => {
               }
             </>
           )}
+        </div>
         </div>
       </div>
     </div>

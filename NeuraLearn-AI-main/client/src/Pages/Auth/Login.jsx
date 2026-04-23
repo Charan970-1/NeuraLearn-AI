@@ -13,13 +13,26 @@ const avatars = [
   "https://api.dicebear.com/7.x/bottts/svg?seed=neura1"
 ];
 
-function Login() {
+const EyeIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+
+function Login({ onLogin }) {
   const [isSignup, setIsSignup] = useState(false);
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(avatars[0]);
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const backend = import.meta.env.VITE_BACKEND_URL;
   const nav = useNavigate();
@@ -43,6 +56,7 @@ function Login() {
         if (!isSignup) {
           localStorage.setItem('token', resp.data.token);
           localStorage.setItem('user', JSON.stringify(resp.data.user));
+          if (onLogin) onLogin(resp.data.token);
           nav('/dashboard');
         } else {
           setIsSignup(false);
@@ -73,18 +87,16 @@ function Login() {
 
           <form className="login-form" onSubmit={handleSubmit}>
             {isSignup && (
-              <>
-                <div className="login-field">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Your Name"
-                    autoComplete="name"
-                  />
-                </div>
-              </>
+              <div className="login-field">
+                <label>Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Your Name"
+                  autoComplete="name"
+                />
+              </div>
             )}
 
             <div className="login-field">
@@ -100,34 +112,36 @@ function Login() {
 
             <div className="login-field">
               <label>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder={isSignup ? 'Create a password' : '••••••••'}
-                autoComplete={isSignup ? 'new-password' : 'current-password'}
-              />
+              <div className="password-field-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={isSignup ? 'Create a password' : '••••••••'}
+                  autoComplete={isSignup ? 'new-password' : 'current-password'}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
 
             {isSignup && (
               <div className="login-field">
                 <label>Choose an Avatar</label>
-                <div style={{ display: 'flex', gap: '0.7rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                <div className="avatar-picker">
                   {avatars.map((url, idx) => (
                     <img
                       key={url}
                       src={url}
                       alt={`avatar-${idx + 1}`}
                       className={`avatar-option${avatar === url ? ' selected' : ''}`}
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: '50%',
-                        border: avatar === url ? '2.5px solid #3F8EFC' : '2px solid #E2E8F0',
-                        cursor: 'pointer',
-                        boxShadow: avatar === url ? '0 0 0 2px #3EE4B2' : 'none',
-                        transition: 'border 0.2s, box-shadow 0.2s'
-                      }}
                       onClick={() => setAvatar(url)}
                     />
                   ))}
@@ -147,17 +161,10 @@ function Login() {
             <span
               onClick={() => setIsSignup(!isSignup)}
               className="login-link"
-              style={{ cursor: 'pointer' }}
             >
               {isSignup ? 'Sign in' : 'Sign up'}
             </span>
           </div>
-        </div>
-
-        {/* Footer outside the login-card container */}
-        <div className="contact-footer">
-          <p>Email: <a href="mailto:charanbandi18@gmail.com">charanbandi18@gmail.com</a></p>
-          <p>Contact for bug reporting</p>
         </div>
       </div>
     </div>

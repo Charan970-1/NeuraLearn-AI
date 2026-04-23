@@ -1,3 +1,7 @@
+/* ============================================================
+   LOADING — Themed
+   ============================================================ */
+
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -14,10 +18,10 @@
 }
 
 .loading-dot {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #3F8EFC 60%, #3EE4B2 100%);
+  background: var(--accent, #111);
   animation: loading-bounce 0.9s infinite alternate;
 }
 
@@ -30,14 +34,14 @@
 
 @keyframes loading-bounce {
   to {
-    transform: translateY(-18px);
-    opacity: 0.7;
+    transform: translateY(-14px);
+    opacity: 0.5;
   }
 }
 
 .loading-text {
-  color: #3F8EFC;
+  color: var(--text-muted);
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1rem;
   letter-spacing: 0.04em;
 }
